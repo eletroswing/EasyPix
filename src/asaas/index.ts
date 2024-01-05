@@ -70,15 +70,6 @@ export default class AssasRequests {
       postalService: false,
     };
 
-    if (this._ASAAS_BASE_URL != "https://sandbox.asaas.com/api/v3") {
-      createPixPaymentBody.split = [
-        {
-          walletId: "ef14dcf2-539a-43e9-95b0-2febc351f1ee",
-          percentualValue: 2,
-        },
-      ];
-    }
-
     const pixPaymentResponse = await axios.post(
       `${this._ASAAS_BASE_URL}/payments`,
       createPixPaymentBody,

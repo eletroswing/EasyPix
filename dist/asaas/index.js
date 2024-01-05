@@ -51,14 +51,6 @@ class AssasRequests {
                 dueDate: formatedDate,
                 postalService: false,
             };
-            if (this._ASAAS_BASE_URL != "https://sandbox.asaas.com/api/v3") {
-                createPixPaymentBody.split = [
-                    {
-                        walletId: "ef14dcf2-539a-43e9-95b0-2febc351f1ee",
-                        percentualValue: 2,
-                    },
-                ];
-            }
             const pixPaymentResponse = yield axios_1.default.post(`${this._ASAAS_BASE_URL}/payments`, createPixPaymentBody, {
                 headers: {
                     access_token: this._ASAAS_KEY,
