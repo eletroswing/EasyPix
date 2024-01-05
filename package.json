@@ -1,0 +1,57 @@
+{
+  "name": "easy-pix",
+  "version": "1.0.0",
+  "description": "Pix payments made easy for developers build arround payment gatways",
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "dev": "ts-node-dev ./src/index.ts",
+    "start": "ts-node ./src/index.ts",
+    "commit": "cz"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eletroswing/EasyPix.git"
+  },
+  "keywords": [
+    "easy",
+    "pix",
+    "payment",
+    "js",
+    "node",
+    "brasil",
+    "gatway"
+  ],
+  "author": "eletroswing",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/eletroswing/EasyPix/issues"
+  },
+  "homepage": "https://github.com/eletroswing/EasyPix#readme",
+  "devDependencies": {
+    "@types/node-schedule": "^2.1.5",
+    "commitizen": "^4.3.0",
+    "jest": "^29.7.0",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "axios": "^1.6.4",
+    "node-schedule": "^2.1.1"
+  },
+  "presets": [
+    [
+      "@babel/preset-env",
+      {
+        "modules": "commonjs"
+      }
+    ]
+  ],
+  "config": {
+    "commitizen": {
+      "path": "cz-conventional-changelog"
+    }
+  }
+}
