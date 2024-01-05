@@ -138,7 +138,7 @@ export default class EasyPix {
             payment.originalId
           );
 
-          if (status == "RECEIVED" || status == "CONFIRMED") {
+          if (status == "CONFIRMED") {
             this.#paidFunction(payment.id, payment.metadata);
             nodeSchedule.cancelJob(payment.id);
           } else if (status == "OVERDUE") {
@@ -198,7 +198,7 @@ export default class EasyPix {
         JSON.stringify(this.pendingPayments)
       );
 
-      if (status !== "RECEIVED" && status !== "CONFIRMED") {
+      if (status !== "CONFIRMED") {
         await this.#ApiInterface.delPixCob(originalId);
         return this.#dueFunction(id, data?.metadata || {}); // Adicionando verificação para evitar undefined
       } else {

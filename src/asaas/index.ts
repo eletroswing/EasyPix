@@ -126,7 +126,7 @@ export default class AssasRequests {
     };
   }
 
-  async getPixStatus(id: string): Promise<string> {
+  async getPixStatus(id: string): Promise<"PENDING" | "CONFIRMED" | "OVERDUE"> {
     const response = await axios.get(
       `${this._ASAAS_BASE_URL}/payments/${id}/status`,
       {
@@ -142,7 +142,18 @@ export default class AssasRequests {
       throw new Error(
         `Error getting the status, expected status code 200, received status ${response.status} and body ${data}`
       );
-    return data.status;
+
+    switch (data.status) {
+      case "RECEIVED":
+        return "CONFIRMED";
+      case "CONFIRMED":
+        return "CONFIRMED";
+      case "OVERDUE":
+        return "OVERDUE";
+      
+      default: 
+        return "PENDING";
+    }
   }
 
   async delPixCob(id: string): Promise<string> {

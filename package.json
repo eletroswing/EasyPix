@@ -1,6 +1,6 @@
 {
   "name": "easy-pix",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Pix payments made easy for developers build arround payment gatways",
   "main": "./dist/index.js",
   "scripts": {

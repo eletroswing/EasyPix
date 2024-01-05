@@ -216,7 +216,7 @@ _EasyPix_API_KEY = new WeakMap(), _EasyPix_configPath = new WeakMap(), _EasyPix_
         if (this.pendingPayments) {
             yield Promise.all(this.pendingPayments.map((payment) => __awaiter(this, void 0, void 0, function* () {
                 const status = yield __classPrivateFieldGet(this, _EasyPix_ApiInterface, "f").getPixStatus(payment.originalId);
-                if (status == "RECEIVED" || status == "CONFIRMED") {
+                if (status == "CONFIRMED") {
                     __classPrivateFieldGet(this, _EasyPix_paidFunction, "f").call(this, payment.id, payment.metadata);
                     node_schedule_1.default.cancelJob(payment.id);
                 }
@@ -238,7 +238,7 @@ _EasyPix_API_KEY = new WeakMap(), _EasyPix_configPath = new WeakMap(), _EasyPix_
         const data = this.pendingPayments.find((item) => item.originalId === originalId);
         this.pendingPayments = this.pendingPayments.filter((item) => item.originalId !== originalId);
         node_fs_1.default.writeFileSync(node_path_1.default.join(__classPrivateFieldGet(this, _EasyPix_configPath, "f"), "config.json"), JSON.stringify(this.pendingPayments));
-        if (status !== "RECEIVED" && status !== "CONFIRMED") {
+        if (status !== "CONFIRMED") {
             yield __classPrivateFieldGet(this, _EasyPix_ApiInterface, "f").delPixCob(originalId);
             return __classPrivateFieldGet(this, _EasyPix_dueFunction, "f").call(this, id, (data === null || data === void 0 ? void 0 : data.metadata) || {}); // Adicionando verificação para evitar undefined
         }

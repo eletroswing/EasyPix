@@ -95,7 +95,16 @@ class AssasRequests {
             const data = yield response.data;
             if (response.status != 200)
                 throw new Error(`Error getting the status, expected status code 200, received status ${response.status} and body ${data}`);
-            return data.status;
+            switch (data.status) {
+                case "RECEIVED":
+                    return "CONFIRMED";
+                case "CONFIRMED":
+                    return "CONFIRMED";
+                case "OVERDUE":
+                    return "OVERDUE";
+                default:
+                    return "PENDING";
+            }
         });
     }
     delPixCob(id) {
