@@ -68,7 +68,7 @@ Sua função mais parceira. Ela cria codigos pix expiraveis pra você.
 
 - **id** (string): Identificador único para a transação PIX.
 - **clientName** (string): Nome do cliente associado à transação.
-- **cpfCnpj** (string): Documento identificador do cliente (sem pontuação).
+- **cpfCnpjEmail** (string): Documento identificador do cliente (sem pontuação).
 - **value** (number): Valor a ser cobrado na transação PIX.
 - **description** (string): Descrição da transação PIX.
 - **expiresIn** (number): Tempo de expiração da transação em segundos 
@@ -94,7 +94,7 @@ Sua função mais parceira. Ela cria codigos pix expiraveis pra você.
 const pix = await EasyPixLib.create(
   id: "Seu identificador único",
   clientName: "Nome do seu cliente",
-  cpfCnpj: "Documento identificador do seu cliente (sem pontuação)",
+  cpfCnpjEmail: "Documento identificador do seu cliente",
   value: Valor a ser cobrado,
   description: "Descrição do pix",
   expiresIn: Valor em segundos para expiração (padrão: 5 minutos, mínimo: 1 minuto, máximo: 48 horas),
