@@ -1,8 +1,3 @@
-## Quer Ajudar a desenvolver?
-Acesse o github agora, de sua estrelinha e aguarde o upload!
-https://github.com/eletroswing/EasyPix
-
-
 # Easy Pix
 EasyPix foi construido para ser um ecossistema pix completo de uso simples em nodejs, desde a geração do pix, até as chamadas de callback!
 
