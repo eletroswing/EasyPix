@@ -2,51 +2,49 @@ import path from "node:path";
 import fs from "node:fs";
 import nodeSchedule from "node-schedule";
 
-import AssasRequests from "./asaas";
-
-// Enum for providers
-enum Provider {
-  ASAAS = "ASAAS",
-}
-
-interface PendingPayment {
-  id: string;
-  originalId: string;
-  expirationDate: Date;
-  metadata: any;
-  value: number;
-  netValue: number;
-}
+import { ICreatePixPayload, ICreatePixTransferPayload, ICreatePixTransferResult, IPendingPayment, IProvider, OPERATION_TYPE, PIX_ADDRESS_KEY_TYPE, PIX_STATUS, PROVIDERS } from "./shared/interfaces";
+import { AsaasProvider } from "./providers";
+import { InvalidProvider } from "./shared/errors";
 
 export default class EasyPix {
   #API_KEY: string;
   #configPath: string;
   #mainLoop: NodeJS.Timeout | undefined;
   #loopSecondsDelay: number;
-  pendingPayments: PendingPayment[];
-  #ApiInterface: AssasRequests;
+  pendingPayments: IPendingPayment[];
+  #ApiInterface: IProvider;
   #dueFunction: (id: string, metadata: any) => void;
   #paidFunction: (id: string, metadata: any) => void;
-  #provider: Provider;
+  #provider: PROVIDERS;
 
-  constructor(
-    apiKey: string | null = null,
-    useSandbox: boolean = true,
-    loopSecondsDelay: number = 60,
-    provider: Provider = Provider.ASAAS,
-    configPath: string = "./"
+  constructor({
+    apiKey = null,
+    useSandbox = true,
+    loopSecondsDelay = 60,
+    provider = PROVIDERS.ASAAS,
+    configPath = "./"
+  }: {
+    apiKey?: string | null;
+    useSandbox?: boolean;
+    loopSecondsDelay?: number;
+    provider?: PROVIDERS;
+    configPath?: string;
+
+  }
   ) {
-    this.#provider = provider;
-    this.#API_KEY = apiKey as string;
 
-    switch (provider) {
-      default:
-        if (!apiKey)
-          throw new Error(
-            "Missing Asaas api key. Take a look on https://docs.asaas.com/docs/autenticacao and get yours."
-          );
-        this.#ApiInterface = new AssasRequests(this.#API_KEY, useSandbox);
+
+    this.#provider = provider;
+    this.#API_KEY = apiKey || '';
+    const providers = {
+      [PROVIDERS.ASAAS]: AsaasProvider
     }
+
+    if (!providers[provider]) {
+      throw new InvalidProvider(provider)
+    }
+
+    this.#ApiInterface = new providers[provider]({ API_KEY: apiKey, useSandbox });
 
     this.#configPath = configPath;
     this.#loopSecondsDelay = loopSecondsDelay;
@@ -70,7 +68,7 @@ export default class EasyPix {
     return this.#loopSecondsDelay;
   }
 
-  get provider(): Provider {
+  get provider(): PROVIDERS {
     return this.#provider;
   }
 
@@ -90,18 +88,14 @@ export default class EasyPix {
     return this.#paidFunction;
   }
 
-  get apiInterface(): AssasRequests {
+  get apiInterface(): IProvider {
     return this.#ApiInterface;
   }
 
-  /**
-   * Initialize EasyPix instance.
-   */
   async #init() {
-    // Load the pending pix from config
     try {
       const data = fs.readFileSync(path.join(this.#configPath, "config.json"));
-      const pendingPixFile: PendingPayment[] = JSON.parse(data.toString());
+      const pendingPixFile: IPendingPayment[] = JSON.parse(data.toString());
 
       pendingPixFile.forEach((pix) => {
         const callJobDate: Date = new Date(pix.expirationDate);
@@ -125,23 +119,20 @@ export default class EasyPix {
     this.#loop();
   }
 
-  /**
-   * Main loop for processing pending payments.
-   */
   async #loop() {
-    const newPendingPayments: PendingPayment[] = [];
+    const newPendingPayments: IPendingPayment[] = [];
 
     if (this.pendingPayments) {
       await Promise.all(
         this.pendingPayments.map(async (payment) => {
-          const status = await this.#ApiInterface.getPixStatus(
+          const status = await this.#ApiInterface.getPixPaymentStatusByPaymentId(
             payment.originalId
           );
 
-          if (status == "CONFIRMED") {
+          if (status === PIX_STATUS.CONFIRMED) {
             this.#paidFunction(payment.id, payment.metadata);
             nodeSchedule.cancelJob(payment.id);
-          } else if (status == "OVERDUE") {
+          } else if (status === PIX_STATUS.OVERDUE) {
             this.#dueFunction(payment.id, payment.metadata);
             nodeSchedule.cancelJob(payment.id);
           } else {
@@ -159,31 +150,18 @@ export default class EasyPix {
     }
   }
 
-  /**
-   * Set a callback for when a payment is due.
-   * @param cb - Callback function.
-   */
   onDue(cb: (id: string, metadata: any) => void): void {
     this.#dueFunction = cb;
   }
 
-  /**
-   * Set a callback for when a payment is paid.
-   * @param cb - Callback function.
-   */
+
   onPaid(cb: (id: string, metadata: any) => void): void {
     this.#paidFunction = cb;
   }
 
-  /**
-   * Callback function for overdue payments.
-   * @param id - Payment ID.
-   * @param originalId - Original payment ID.
-   * @returns Callback function.
-   */
   #overdue(id: string, originalId: string) {
     return async () => {
-      const status = await this.#ApiInterface.getPixStatus(originalId);
+      const status = await this.#ApiInterface.getPixPaymentStatusByPaymentId(originalId);
 
       const data = this.pendingPayments.find(
         (item) => item.originalId === originalId
@@ -198,47 +176,39 @@ export default class EasyPix {
         JSON.stringify(this.pendingPayments)
       );
 
-      if (status !== "CONFIRMED") {
-        await this.#ApiInterface.delPixCob(originalId);
-        return this.#dueFunction(id, data?.metadata || {}); // Adicionando verificação para evitar undefined
+      if (status !== PIX_STATUS.CONFIRMED) {
+        await this.#ApiInterface.deletePixChargeByPaymentId(originalId);
+        return this.#dueFunction(id, data?.metadata || {});
       } else {
-        return this.#paidFunction(id, data?.metadata || {}); // Adicionando verificação para evitar undefined
+        return this.#paidFunction(id, data?.metadata || {});
       }
     };
   }
 
-  /**
-   * Create a new payment.
-   * @param id - Payment ID.
-   * @param clientName - Client name.
-   * @param cpfCnpj - Client CPF/CNPJ.
-   * @param value - Payment value.
-   * @param description - Payment description.
-   * @param expiresIn - Payment expiration time (in seconds).
-   * @param metadata - Payment metadata.
-   * @returns Payment details.
-   */
-  async create(
-    id: string,
-    clientName: string,
-    cpfCnpj: string,
-    value: number,
-    description: string,
-    expiresIn: number = 5 * 60,
-    metadata: any = {}
-  ): Promise<{
+  async create({
+    id,
+    name,
+    taxId,
+    value,
+    description,
+    metadata = {},
+    expiresIn = 5 * 60,
+  }: ICreatePixPayload & {
+    expiresIn?: number,
+    metadata?: { [key: string]: any }
+  }): Promise<{
     encodedImage: string;
     payload: string;
     expirationDate: Date;
     value: number;
     netValue: number;
   }> {
-    const pix = await this.#ApiInterface.generatePix({
-      cpfCnpj: cpfCnpj,
-      description: description,
-      id: id,
-      name: clientName,
-      value: value,
+    const pix = await this.#ApiInterface.createPixPayment({
+      id,
+      name,
+      value,
+      taxId,
+      description,
     });
 
     if (expiresIn < 60 || expiresIn > 60 * 60 * 48) {
@@ -246,16 +216,15 @@ export default class EasyPix {
     }
 
     const now = new Date();
-    const expireAtDate = new Date(now.getTime() + expiresIn * 1000);
+    const expirationDate = new Date(now.getTime() + expiresIn * 1000);
 
-    // Insert the pix on the pending pixes
     this.pendingPayments.push({
-      id: id,
-      originalId: pix.originalId,
-      expirationDate: expireAtDate,
-      metadata: metadata,
+      id,
+      metadata,
       value: pix.value,
       netValue: pix.netValue,
+      originalId: pix.originalId,
+      expirationDate,
     });
 
     fs.writeFileSync(
@@ -263,8 +232,7 @@ export default class EasyPix {
       JSON.stringify(this.pendingPayments)
     );
 
-    // Save the job on overdue pix check
-    const callJobDate: Date = new Date(expireAtDate);
+    const callJobDate: Date = new Date(expirationDate);
     nodeSchedule.scheduleJob(
       id,
       callJobDate,
@@ -272,18 +240,11 @@ export default class EasyPix {
     );
 
     return {
-      encodedImage: pix.encodedImage,
-      expirationDate: expireAtDate,
-      payload: pix.payload,
-      value: pix.value,
-      netValue: pix.netValue,
+      ...pix,
+      expirationDate,
     };
   }
 
-  /**
-   * Delete a payment.
-   * @param id - Payment ID.
-   */
   async deleteCob(id: string): Promise<void> {
     const deletingCurrent = this.pendingPayments.find((item) => item.id === id);
 
@@ -298,39 +259,24 @@ export default class EasyPix {
 
     nodeSchedule.cancelJob(id);
 
-    await this.#ApiInterface.delPixCob(deletingCurrent?.originalId as string);
+    await this.#ApiInterface.deletePixChargeByPaymentId(deletingCurrent?.originalId as string);
   }
 
-  /**
-   * Transfer money.
-   * @param value - Amount to transfer.
-   * @param pixAddressKey - PIX address key.
-   * @param pixAddressKeyType - Type of PIX address key (CPF, EMAIL, CNPJ, PHONE, EVP).
-   * @param description - Transfer description.
-   * @returns Transfer details.
-   */
-  async transfer(
-    value: number,
-    pixAddressKey: string,
-    pixAddressKeyType: "CPF" | "EMAIL" | "CNPJ" | "PHONE" | "EVP",
-    description: string
-  ): Promise<{
-    authorized: boolean;
-    transferFee: number;
-    netValue: number;
-    value: number;
-  }> {
-    return this.#ApiInterface.transfer(
+  async transfer({
+    value,
+    description,
+    pixAddressKey,
+    pixAddressKeyType,
+  }: ICreatePixTransferPayload): Promise<ICreatePixTransferResult> {
+    return this.#ApiInterface.createPixTransfer({
       value,
+      description,
       pixAddressKey,
       pixAddressKeyType,
-      description
-    );
+      operationType: OPERATION_TYPE.PIX,
+    });
   }
 
-  /**
-   * Quit EasyPix instance.
-   */
   async quit(): Promise<void> {
     return new Promise((resolve) => {
       clearInterval(this.#mainLoop);
@@ -346,6 +292,3 @@ export default class EasyPix {
     });
   }
 }
-
-declare var module: any;
-module.exports = EasyPix;
