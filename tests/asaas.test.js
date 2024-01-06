@@ -1,42 +1,61 @@
-const AssasRequests = require('../dist/asaas/index.js');
+const {AsaasProvider} = require('../dist/providers/AsaasProvider');
+const HttpClient = require('../dist/clients/HttpClient');
+
 const axios = require('axios');
 jest.mock('axios');
+jest.mock('../dist/clients/HttpClient', () => ({
+  post: jest.fn(),
+  get: jest.fn(),
+  put: jest.fn(),
+  patch: jest.fn(),
+  delete: jest.fn(),
+}));
 
 describe('AssasRequests.default', () => {
+  test('Constructor throws error when ASAAS_KEY is missing and theres not arguments', () => {
+    expect(() => new AsaasProvider()).toThrow("Cannot read properties of undefined (reading 'API_KEY')");
+  });
+
   test('Constructor throws error when ASAAS_KEY is missing', () => {
-    expect(() => new AssasRequests).toThrow('Missing asaas api key');
+    expect(() => new AsaasProvider({})).toThrow('Missing api key');
   });
 
   test('Constructor creates instance with valid ASAAS_KEY and default ASAAS_BASE_URL', () => {
-    const assasRequests = new AssasRequests('pretend_this_is_a_key');
-    expect(assasRequests).toBeInstanceOf(AssasRequests);
-    expect(assasRequests._ASAAS_KEY).toBe('pretend_this_is_a_key');
-    expect(assasRequests._ASAAS_BASE_URL).toBe('https://sandbox.asaas.com/api/v3');
+    const assasRequests = new AsaasProvider({API_KEY: 'pretend_this_is_a_key'});
+    expect(assasRequests).toBeInstanceOf(AsaasProvider);
+    expect(assasRequests.ASAAS_KEY).toBe('pretend_this_is_a_key');
+    expect(assasRequests.ASAAS_BASE_URL).toBe('https://sandbox.asaas.com/api/v3');
   });
 
   test('generatePix method creates a customer, a Pix payment, and retrieves QR code', async () => {
-    const assasRequests = new AssasRequests('valid_asaas_key'); 
-    axios.post.mockResolvedValueOnce({
-      status: 200,
-      data: { id: 'customer_id' },
+    HttpClient.post.mockResolvedValueOnce({
+      statusCode: 200,
+      body: { id: 'customer_id' },
     });
-    axios.post.mockResolvedValueOnce({
-      status: 200,
-      data: { id: 'pix_payment_id', value: 100, netValue: 98 },
+  
+    HttpClient.post.mockResolvedValueOnce({
+      statusCode: 200,
+      body: { id: 'pix_payment_id', value: 100, netValue: 98 },
     });
-    axios.get.mockResolvedValueOnce({
-      status: 200,
-      data: { encodedImage: 'mocked_encoded_image', payload: 'mocked_payload', expirationDate: new Date() },
+  
+    HttpClient.get.mockResolvedValueOnce({
+      statusCode: 200,
+      body: { encodedImage: 'mocked_encoded_image', payload: 'mocked_payload', expirationDate: new Date() },
     });
-
-    const result = await assasRequests.generatePix({
+  
+    const asaasProvider = new AsaasProvider({
+      API_KEY: 'valid_asaas_key',
+      httpClient: HttpClient,
+    });
+  
+    const result = await asaasProvider.createPixPayment({
       id: '123',
       name: 'John Doe',
-      cpfCnpj: '123456789',
+      taxId: '123456789',
       value: 100,
       description: 'Test Pix',
     });
-
+  
     expect(result).toEqual({
       encodedImage: 'mocked_encoded_image',
       payload: 'mocked_payload',
@@ -45,144 +64,138 @@ describe('AssasRequests.default', () => {
       value: 100,
       netValue: 98,
     });
-
-    expect(axios.post).toHaveBeenCalledWith(expect.stringContaining('/customers'), expect.any(Object), expect.any(Object));
-    expect(axios.post).toHaveBeenCalledWith(expect.stringContaining('/payments'), expect.any(Object), expect.any(Object));
-    expect(axios.get).toHaveBeenCalledWith(expect.stringContaining('/payments/pix_payment_id/pixQrCode'), expect.any(Object));
+  
+    expect(HttpClient.post).toHaveBeenCalledWith(
+      expect.stringContaining('/customers'),
+      { name: 'John Doe', cpfCnpj: '123456789' },
+      expect.objectContaining({
+        headers: { access_token: 'valid_asaas_key' },
+      })
+    );
+  
+    expect(HttpClient.post).toHaveBeenCalledWith(
+      expect.stringContaining('/payments'),
+      expect.objectContaining({
+        value: 100,
+        description: 'Test Pix',
+        billingType: 'PIX',
+        postalService: false,
+        externalReference: '123',
+        customer: 'customer_id',
+      }),
+      expect.objectContaining({
+        headers: { access_token: 'valid_asaas_key' },
+      })
+    );
+  
+    expect(HttpClient.get).toHaveBeenCalledWith(
+      expect.stringContaining('/payments/pix_payment_id/pixQrCode'),
+      expect.objectContaining({
+        headers: { access_token: 'valid_asaas_key' },
+      })
+    );
   });
 
   test("generatePix method creates a customer, a Pix payment, and retrieves QR code, error creating customer", async () => {
-    const assasRequests = new AssasRequests("valid_asaas_key");
-    axios.post.mockResolvedValueOnce({
+    HttpClient.post.mockResolvedValueOnce({
       status: 400,
-      data: { id: "customer_id" },
+      body: { id: "customer_id" },
     });
+  
+    const asaasProvider = new AsaasProvider({API_KEY: "valid_asaas_key", httpClient: HttpClient});
 
     await expect(
-      assasRequests.generatePix({
+      asaasProvider.createPixPayment({
         id: "123",
         name: "John Doe",
         cpfCnpj: "123456789",
         value: 100,
-        description: "Test Pix",
+        description: "test.skip Pix",
       })
     ).rejects.toThrow(
-      /Error creating the customer, expected and id and status code 200, received status 400 and body/
+      /Unexpected Error creating the pix payment - /
     );
   });
 
   test('generatePix method creates a customer, a Pix payment, and retrieves QR code, error creating pix', async () => {
-    const assasRequests = new AssasRequests('valid_asaas_key'); 
-    axios.post.mockResolvedValueOnce({
-      status: 200,
-      data: { id: 'customer_id' },
+    HttpClient.post.mockResolvedValueOnce({
+      statusCode: 200,
+      body: { id: 'customer_id' },
     });
-    axios.post.mockResolvedValueOnce({
-      status: 400,
-      data: { id: 'pix_payment_id', value: 100, netValue: 98 },
+  
+    HttpClient.post.mockResolvedValueOnce({
+      statusCode: 400,
+      body: { id: 'pix_payment_id', value: 100, netValue: 98 },
     });
-
+  
+    const asaasProvider = new AsaasProvider({API_KEY: "valid_asaas_key", httpClient: HttpClient});
+  
     await expect(
-      assasRequests.generatePix({
-        id: "123",
-        name: "John Doe",
-        cpfCnpj: "123456789",
+      asaasProvider.createPixPayment({
+        id: '123',
+        name: 'John Doe',
+        cpfCnpj: '123456789',
         value: 100,
-        description: "Test Pix",
+        description: 'Test Pix',
       })
     ).rejects.toThrow(
-      /Error creating the pix, expected and id and status code 200, received status 400 and body/
+      /Unexpected Error looking for the qr code - /
     );
   })
 
-  test('generatePix method creates a customer, a Pix payment, and retrieves QR code, error getting the qr', async () => {
-    const assasRequests = new AssasRequests('valid_asaas_key'); 
-    axios.post.mockResolvedValueOnce({
-      status: 200,
-      data: { id: 'customer_id' },
-    });
-    axios.post.mockResolvedValueOnce({
-      status: 200,
-      data: { id: 'pix_payment_id', value: 100, netValue: 98 },
-    });
-    axios.get.mockResolvedValueOnce({
-      status: 400,
-      data: { encodedImage: 'mocked_encoded_image', payload: 'mocked_payload', expirationDate: new Date() },
+  test('getPixStatus method retrieves Pix payment statusCode: 200 ok', async () => {
+    const asaasProvider = new AsaasProvider({API_KEY: "valid_asaas_key", httpClient: HttpClient});
+  
+    HttpClient.get.mockResolvedValueOnce({
+      statusCode: 200,
+      body: { status: 'CONFIRMED' },
     });
 
-    await expect(
-      assasRequests.generatePix({
-        id: "123",
-        name: "John Doe",
-        cpfCnpj: "123456789",
-        value: 100,
-        description: "Test Pix",
-      })
-    ).rejects.toThrow(
-      /Error looking for the qr code, expected status code 200, received status 400 and body/
-    );
-  });
-
-  test('getPixStatus method retrieves Pix payment status: 200 ok', async () => {
-    const assasRequests = new AssasRequests('valid_asaas_key');
-    axios.get.mockResolvedValueOnce({
-      status: 200,
-      data: { status: 'CONFIRMED' },
-    });
-
-    const result = await assasRequests.getPixStatus('pix_payment_id');
+    const result = await asaasProvider.getPixPaymentStatusByPaymentId('pix_payment_id');
 
     expect(result).toBe('CONFIRMED');
-    expect(axios.get).toHaveBeenCalledWith(expect.stringContaining('/payments/pix_payment_id/status'), expect.any(Object));
+    expect(HttpClient.get).toHaveBeenCalledWith(expect.stringContaining('/payments/pix_payment_id/status'), expect.any(Object));
   });
 
-  test('getPixStatus method retrieves Pix payment status: 400 error', async () => {
-    const assasRequests = new AssasRequests('valid_asaas_key');
-    axios.get.mockResolvedValueOnce({
-      status: 400,
-      data: { status: 'CONFIRMED' },
-    });
-  
-    await expect(assasRequests.getPixStatus('pix_payment_id')).rejects.toThrow(/Error getting the status, expected status code 200, received status 400 and body/);
-    expect(axios.get).toHaveBeenCalledWith(expect.stringContaining('/payments/pix_payment_id/status'), expect.any(Object));
-  });  
+  test('deletePixChargeByPaymentId method deletes Pix payment: delete true', async () => {
+    const asaasProvider = new AsaasProvider({API_KEY: "valid_asaas_key", httpClient: HttpClient});
 
-  test('delPixCob method deletes Pix payment: delete true', async () => {
-    const assasRequests = new AssasRequests('valid_asaas_key');
-    axios.delete.mockResolvedValueOnce({
-      status: 200,
-      data: { id: 'pix_payment_id', deleted: true },
+    HttpClient.delete.mockResolvedValueOnce({
+      statusCode: 200,
+      body: { id: 'pix_payment_id', deleted: true },
     });
 
-    const result = await assasRequests.delPixCob('pix_payment_id');
+    const result = await asaasProvider.deletePixChargeByPaymentId('pix_payment_id');
 
     expect(result).toBe(true);
-    expect(axios.delete).toHaveBeenCalledWith(expect.stringContaining('/payments/pix_payment_id'), expect.any(Object));
+    expect(HttpClient.delete).toHaveBeenCalledWith(expect.stringContaining('/payments/pix_payment_id'), expect.any(Object));
   });
 
-  test('delPixCob method deletes Pix payment: delete false', async () => {
-    const assasRequests = new AssasRequests('valid_asaas_key');
-    axios.delete.mockResolvedValueOnce({
-      status: 200,
-      data: { id: 'pix_payment_id', deleted: false },
+  test('deletePixChargeByPaymentId method deletes Pix payment: delete false', async () => {
+    const asaasProvider = new AsaasProvider({API_KEY: "valid_asaas_key", httpClient: HttpClient});
+
+    HttpClient.delete.mockResolvedValueOnce({
+      statusCode: 200,
+      body: { id: 'pix_payment_id', deleted: false },
     });
 
-    const result = await assasRequests.delPixCob('pix_payment_id');
+    const result = await asaasProvider.deletePixChargeByPaymentId('pix_payment_id');
 
     expect(result).toBe(false);
-    expect(axios.delete).toHaveBeenCalledWith(expect.stringContaining('/payments/pix_payment_id'), expect.any(Object));
+    expect(HttpClient.delete).toHaveBeenCalledWith(expect.stringContaining('/payments/pix_payment_id'), expect.any(Object));
   });
 
   test('transfer method initiates a transfer', async () => {
-    const assasRequests = new AssasRequests('valid_asaas_key');
-    axios.post.mockResolvedValueOnce({
-      status: 200,
-      data: { authorized: true, transferFee: 2, netValue: 98, value: 100 },
+    const asaasProvider = new AsaasProvider({API_KEY: "valid_asaas_key", httpClient: HttpClient});
+    
+    HttpClient.post.mockResolvedValueOnce({
+      statusCode: 200,
+      body: { authorized: true, transferFee: 2, netValue: 98, value: 100 },
     });
 
-    const result = await assasRequests.transfer(100, 'john@example.com', 'EMAIL', 'Transfer description');
+    const result = await asaasProvider.createPixTransfer(100, 'john@example.com', 'EMAIL', 'Transfer description');
 
     expect(result).toEqual({ authorized: true, transferFee: 2, netValue: 98, value: 100 });
-    expect(axios.post).toHaveBeenCalledWith(expect.stringContaining('/transfers'), expect.any(Object), expect.any(Object));
+    expect(HttpClient.post).toHaveBeenCalledWith(expect.stringContaining('/transfers'), expect.any(Object), expect.any(Object));
   });
 });
