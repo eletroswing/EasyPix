@@ -1,0 +1,1 @@
+export { MercadopagoProviderError } from './MercadopagoProviderError';
