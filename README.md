@@ -1,8 +1,8 @@
 # Easy Pix
 EasyPix foi construido para ser um ecossistema pix completo de uso simples em nodejs, desde a geração do pix, até as chamadas de callback!
 
-# Gatways de pagamento
-Atualmente só suportamos o gatway Asaas, porém a planos para expandir para outros provedores como Mercado Pago, OpenPix, etc!
+# gateways de pagamento
+Atualmente só suportamos o gateway Asaas, porém a planos para expandir para outros provedores como Mercado Pago, OpenPix, etc!
 
 # Ainda em testes
 Considere em colaborar para tornar essa lib algo melhor pra comunidade! Tenha em mente que ainda está em fase inicial e pode falhar.
@@ -37,7 +37,7 @@ O construtor EasyPix recebe parametros obrigatorios e opcionais, sendo eles:
 **Opcionais**:<br />
 - **useSandbox**: Define se é a api em modo de testes ou não, por padrão vem definido como true, lembre-se, a chave de api deve acompanhar esse argumento, se sua chave for sandbox, isso deve ser definido como true, se não, como false
 - **loopSecondsDelay**: Define o tempo do loop que irá checar se os pagamentos foram efetuados ou não. Por padrão vem definido como 60 segundos.
-- **provider**: O provedor do gatway. Atualmente so asaas é suportado.
+- **provider**: O provedor do gateway. Atualmente so asaas é suportado.
 - **configPath**: Caminho do json de configuração. É onde será salvo os pagamentos pendentes para caso o script venha a cair, os dados ainda estejam salvos.
 
 # EasyPix: Metódos:
