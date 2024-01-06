@@ -292,3 +292,6 @@ export default class EasyPix {
     });
   }
 }
+
+declare var module: any;
+module.exports = EasyPix;
