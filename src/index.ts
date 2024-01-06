@@ -3,11 +3,7 @@ import fs from "node:fs";
 import nodeSchedule from "node-schedule";
 
 import AssasRequests from "./asaas";
-
-// Enum for providers
-enum Provider {
-  ASAAS = "ASAAS",
-}
+import MercadopagoRequests from "./mercado-pago";
 
 interface PendingPayment {
   id: string;
@@ -24,23 +20,30 @@ export default class EasyPix {
   #mainLoop: NodeJS.Timeout | undefined;
   #loopSecondsDelay: number;
   pendingPayments: PendingPayment[];
-  #ApiInterface: AssasRequests;
+  #ApiInterface: AssasRequests | MercadopagoRequests;
   #dueFunction: (id: string, metadata: any) => void;
   #paidFunction: (id: string, metadata: any) => void;
-  #provider: Provider;
+  #provider: "ASAAS" | "MERCADOPAGO";
 
   constructor(
     apiKey: string | null = null,
     useSandbox: boolean = true,
     loopSecondsDelay: number = 60,
-    provider: Provider = Provider.ASAAS,
+    provider: "ASAAS" | "MERCADOPAGO" = "ASAAS",
     configPath: string = "./"
   ) {
     this.#provider = provider;
     this.#API_KEY = apiKey as string;
 
     switch (provider) {
-      default:
+      case "MERCADOPAGO":
+        if (!apiKey)
+          throw new Error(
+            "Missing Mercado Pago api key. Take a look on https://www.mercadopago.com.br/developers/pt/docs and get yours."
+          );
+        this.#ApiInterface = new MercadopagoRequests(this.#API_KEY, useSandbox);
+        break
+      case "ASAAS":
         if (!apiKey)
           throw new Error(
             "Missing Asaas api key. Take a look on https://docs.asaas.com/docs/autenticacao and get yours."
@@ -70,7 +73,7 @@ export default class EasyPix {
     return this.#loopSecondsDelay;
   }
 
-  get provider(): Provider {
+  get provider(): "ASAAS" | "MERCADOPAGO" {
     return this.#provider;
   }
 
@@ -90,7 +93,7 @@ export default class EasyPix {
     return this.#paidFunction;
   }
 
-  get apiInterface(): AssasRequests {
+  get apiInterface(): AssasRequests | MercadopagoRequests {
     return this.#ApiInterface;
   }
 
@@ -211,7 +214,7 @@ export default class EasyPix {
    * Create a new payment.
    * @param id - Payment ID.
    * @param clientName - Client name.
-   * @param cpfCnpj - Client CPF/CNPJ.
+   * @param cpfCnpjEmail - Identifier of the client.
    * @param value - Payment value.
    * @param description - Payment description.
    * @param expiresIn - Payment expiration time (in seconds).
@@ -221,7 +224,7 @@ export default class EasyPix {
   async create(
     id: string,
     clientName: string,
-    cpfCnpj: string,
+    cpfCnpjEmail: string,
     value: number,
     description: string,
     expiresIn: number = 5 * 60,
@@ -234,7 +237,7 @@ export default class EasyPix {
     netValue: number;
   }> {
     const pix = await this.#ApiInterface.generatePix({
-      cpfCnpj: cpfCnpj,
+      cpfCnpj: cpfCnpjEmail,
       description: description,
       id: id,
       name: clientName,
