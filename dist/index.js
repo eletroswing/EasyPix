@@ -27,14 +27,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const node_path_1 = __importDefault(require("node:path"));
 const node_fs_1 = __importDefault(require("node:fs"));
 const node_schedule_1 = __importDefault(require("node-schedule"));
-const asaas_1 = __importDefault(require("./asaas"));
-// Enum for providers
-var Provider;
-(function (Provider) {
-    Provider["ASAAS"] = "ASAAS";
-})(Provider || (Provider = {}));
+const interfaces_1 = require("./shared/interfaces");
+const providers_1 = require("./providers");
+const errors_1 = require("./shared/errors");
 class EasyPix {
-    constructor(apiKey = null, useSandbox = true, loopSecondsDelay = 60, provider = Provider.ASAAS, configPath = "./") {
+    constructor({ apiKey = null, useSandbox = true, loopSecondsDelay = 60, provider = interfaces_1.PROVIDERS.ASAAS, configPath = "./" }) {
         _EasyPix_instances.add(this);
         _EasyPix_API_KEY.set(this, void 0);
         _EasyPix_configPath.set(this, void 0);
@@ -45,13 +42,14 @@ class EasyPix {
         _EasyPix_paidFunction.set(this, void 0);
         _EasyPix_provider.set(this, void 0);
         __classPrivateFieldSet(this, _EasyPix_provider, provider, "f");
-        __classPrivateFieldSet(this, _EasyPix_API_KEY, apiKey, "f");
-        switch (provider) {
-            default:
-                if (!apiKey)
-                    throw new Error("Missing Asaas api key. Take a look on https://docs.asaas.com/docs/autenticacao and get yours.");
-                __classPrivateFieldSet(this, _EasyPix_ApiInterface, new asaas_1.default(__classPrivateFieldGet(this, _EasyPix_API_KEY, "f"), useSandbox), "f");
+        __classPrivateFieldSet(this, _EasyPix_API_KEY, apiKey || '', "f");
+        const providers = {
+            [interfaces_1.PROVIDERS.ASAAS]: providers_1.AsaasProvider
+        };
+        if (!providers[provider]) {
+            throw new errors_1.InvalidProvider(provider);
         }
+        __classPrivateFieldSet(this, _EasyPix_ApiInterface, new providers[provider]({ API_KEY: apiKey, useSandbox }), "f");
         __classPrivateFieldSet(this, _EasyPix_configPath, configPath, "f");
         __classPrivateFieldSet(this, _EasyPix_loopSecondsDelay, loopSecondsDelay, "f");
         __classPrivateFieldSet(this, _EasyPix_mainLoop, undefined, "f");
@@ -87,96 +85,60 @@ class EasyPix {
     get apiInterface() {
         return __classPrivateFieldGet(this, _EasyPix_ApiInterface, "f");
     }
-    /**
-     * Set a callback for when a payment is due.
-     * @param cb - Callback function.
-     */
     onDue(cb) {
         __classPrivateFieldSet(this, _EasyPix_dueFunction, cb, "f");
     }
-    /**
-     * Set a callback for when a payment is paid.
-     * @param cb - Callback function.
-     */
     onPaid(cb) {
         __classPrivateFieldSet(this, _EasyPix_paidFunction, cb, "f");
     }
-    /**
-     * Create a new payment.
-     * @param id - Payment ID.
-     * @param clientName - Client name.
-     * @param cpfCnpj - Client CPF/CNPJ.
-     * @param value - Payment value.
-     * @param description - Payment description.
-     * @param expiresIn - Payment expiration time (in seconds).
-     * @param metadata - Payment metadata.
-     * @returns Payment details.
-     */
-    create(id, clientName, cpfCnpj, value, description, expiresIn = 5 * 60, metadata = {}) {
+    create({ id, name, taxId, value, description, metadata = {}, expiresIn = 5 * 60, }) {
         return __awaiter(this, void 0, void 0, function* () {
-            const pix = yield __classPrivateFieldGet(this, _EasyPix_ApiInterface, "f").generatePix({
-                cpfCnpj: cpfCnpj,
-                description: description,
-                id: id,
-                name: clientName,
-                value: value,
+            const pix = yield __classPrivateFieldGet(this, _EasyPix_ApiInterface, "f").createPixPayment({
+                id,
+                name,
+                value,
+                taxId,
+                description,
             });
             if (expiresIn < 60 || expiresIn > 60 * 60 * 48) {
                 throw new Error(`Expires in must be in the range 60 seconds to 48 hours`);
             }
             const now = new Date();
-            const expireAtDate = new Date(now.getTime() + expiresIn * 1000);
-            // Insert the pix on the pending pixes
+            const expirationDate = new Date(now.getTime() + expiresIn * 1000);
             this.pendingPayments.push({
-                id: id,
-                originalId: pix.originalId,
-                expirationDate: expireAtDate,
-                metadata: metadata,
+                id,
+                metadata,
                 value: pix.value,
                 netValue: pix.netValue,
+                originalId: pix.originalId,
+                expirationDate,
             });
             node_fs_1.default.writeFileSync(node_path_1.default.join(__classPrivateFieldGet(this, _EasyPix_configPath, "f"), "config.json"), JSON.stringify(this.pendingPayments));
-            // Save the job on overdue pix check
-            const callJobDate = new Date(expireAtDate);
+            const callJobDate = new Date(expirationDate);
             node_schedule_1.default.scheduleJob(id, callJobDate, __classPrivateFieldGet(this, _EasyPix_instances, "m", _EasyPix_overdue).call(this, id, pix.originalId));
-            return {
-                encodedImage: pix.encodedImage,
-                expirationDate: expireAtDate,
-                payload: pix.payload,
-                value: pix.value,
-                netValue: pix.netValue,
-            };
+            return Object.assign(Object.assign({}, pix), { expirationDate });
         });
     }
-    /**
-     * Delete a payment.
-     * @param id - Payment ID.
-     */
     deleteCob(id) {
         return __awaiter(this, void 0, void 0, function* () {
             const deletingCurrent = this.pendingPayments.find((item) => item.id === id);
             this.pendingPayments = this.pendingPayments.filter((item) => item.id !== id);
             node_fs_1.default.writeFileSync(node_path_1.default.join(__classPrivateFieldGet(this, _EasyPix_configPath, "f"), "config.json"), JSON.stringify(this.pendingPayments));
             node_schedule_1.default.cancelJob(id);
-            yield __classPrivateFieldGet(this, _EasyPix_ApiInterface, "f").delPixCob(deletingCurrent === null || deletingCurrent === void 0 ? void 0 : deletingCurrent.originalId);
+            yield __classPrivateFieldGet(this, _EasyPix_ApiInterface, "f").deletePixChargeByPaymentId(deletingCurrent === null || deletingCurrent === void 0 ? void 0 : deletingCurrent.originalId);
         });
     }
-    /**
-     * Transfer money.
-     * @param value - Amount to transfer.
-     * @param pixAddressKey - PIX address key.
-     * @param pixAddressKeyType - Type of PIX address key (CPF, EMAIL, CNPJ, PHONE, EVP).
-     * @param description - Transfer description.
-     * @returns Transfer details.
-     */
-    transfer(value, pixAddressKey, pixAddressKeyType, description) {
+    transfer({ value, description, pixAddressKey, pixAddressKeyType, }) {
         return __awaiter(this, void 0, void 0, function* () {
-            return __classPrivateFieldGet(this, _EasyPix_ApiInterface, "f").transfer(value, pixAddressKey, pixAddressKeyType, description);
+            return __classPrivateFieldGet(this, _EasyPix_ApiInterface, "f").createPixTransfer({
+                value,
+                description,
+                pixAddressKey,
+                pixAddressKeyType,
+                operationType: interfaces_1.OPERATION_TYPE.PIX,
+            });
         });
     }
-    /**
-     * Quit EasyPix instance.
-     */
     quit() {
         return __awaiter(this, void 0, void 0, function* () {
             return new Promise((resolve) => {
@@ -194,7 +156,6 @@ class EasyPix {
 }
 _EasyPix_API_KEY = new WeakMap(), _EasyPix_configPath = new WeakMap(), _EasyPix_mainLoop = new WeakMap(), _EasyPix_loopSecondsDelay = new WeakMap(), _EasyPix_ApiInterface = new WeakMap(), _EasyPix_dueFunction = new WeakMap(), _EasyPix_paidFunction = new WeakMap(), _EasyPix_provider = new WeakMap(), _EasyPix_instances = new WeakSet(), _EasyPix_init = function _EasyPix_init() {
     return __awaiter(this, void 0, void 0, function* () {
-        // Load the pending pix from config
         try {
             const data = node_fs_1.default.readFileSync(node_path_1.default.join(__classPrivateFieldGet(this, _EasyPix_configPath, "f"), "config.json"));
             const pendingPixFile = JSON.parse(data.toString());
@@ -215,12 +176,12 @@ _EasyPix_API_KEY = new WeakMap(), _EasyPix_configPath = new WeakMap(), _EasyPix_
         const newPendingPayments = [];
         if (this.pendingPayments) {
             yield Promise.all(this.pendingPayments.map((payment) => __awaiter(this, void 0, void 0, function* () {
-                const status = yield __classPrivateFieldGet(this, _EasyPix_ApiInterface, "f").getPixStatus(payment.originalId);
-                if (status == "CONFIRMED") {
+                const status = yield __classPrivateFieldGet(this, _EasyPix_ApiInterface, "f").getPixPaymentStatusByPaymentId(payment.originalId);
+                if (status === interfaces_1.PIX_STATUS.CONFIRMED) {
                     __classPrivateFieldGet(this, _EasyPix_paidFunction, "f").call(this, payment.id, payment.metadata);
                     node_schedule_1.default.cancelJob(payment.id);
                 }
-                else if (status == "OVERDUE") {
+                else if (status === interfaces_1.PIX_STATUS.OVERDUE) {
                     __classPrivateFieldGet(this, _EasyPix_dueFunction, "f").call(this, payment.id, payment.metadata);
                     node_schedule_1.default.cancelJob(payment.id);
                 }
@@ -234,16 +195,16 @@ _EasyPix_API_KEY = new WeakMap(), _EasyPix_configPath = new WeakMap(), _EasyPix_
     });
 }, _EasyPix_overdue = function _EasyPix_overdue(id, originalId) {
     return () => __awaiter(this, void 0, void 0, function* () {
-        const status = yield __classPrivateFieldGet(this, _EasyPix_ApiInterface, "f").getPixStatus(originalId);
+        const status = yield __classPrivateFieldGet(this, _EasyPix_ApiInterface, "f").getPixPaymentStatusByPaymentId(originalId);
         const data = this.pendingPayments.find((item) => item.originalId === originalId);
         this.pendingPayments = this.pendingPayments.filter((item) => item.originalId !== originalId);
         node_fs_1.default.writeFileSync(node_path_1.default.join(__classPrivateFieldGet(this, _EasyPix_configPath, "f"), "config.json"), JSON.stringify(this.pendingPayments));
-        if (status !== "CONFIRMED") {
-            yield __classPrivateFieldGet(this, _EasyPix_ApiInterface, "f").delPixCob(originalId);
-            return __classPrivateFieldGet(this, _EasyPix_dueFunction, "f").call(this, id, (data === null || data === void 0 ? void 0 : data.metadata) || {}); // Adicionando verificação para evitar undefined
+        if (status !== interfaces_1.PIX_STATUS.CONFIRMED) {
+            yield __classPrivateFieldGet(this, _EasyPix_ApiInterface, "f").deletePixChargeByPaymentId(originalId);
+            return __classPrivateFieldGet(this, _EasyPix_dueFunction, "f").call(this, id, (data === null || data === void 0 ? void 0 : data.metadata) || {});
         }
         else {
-            return __classPrivateFieldGet(this, _EasyPix_paidFunction, "f").call(this, id, (data === null || data === void 0 ? void 0 : data.metadata) || {}); // Adicionando verificação para evitar undefined
+            return __classPrivateFieldGet(this, _EasyPix_paidFunction, "f").call(this, id, (data === null || data === void 0 ? void 0 : data.metadata) || {});
         }
     });
 };
