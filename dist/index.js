@@ -28,13 +28,9 @@ const node_path_1 = __importDefault(require("node:path"));
 const node_fs_1 = __importDefault(require("node:fs"));
 const node_schedule_1 = __importDefault(require("node-schedule"));
 const asaas_1 = __importDefault(require("./asaas"));
-// Enum for providers
-var Provider;
-(function (Provider) {
-    Provider["ASAAS"] = "ASAAS";
-})(Provider || (Provider = {}));
+const mercado_pago_1 = __importDefault(require("./mercado-pago"));
 class EasyPix {
-    constructor(apiKey = null, useSandbox = true, loopSecondsDelay = 60, provider = Provider.ASAAS, configPath = "./") {
+    constructor(apiKey = null, useSandbox = true, loopSecondsDelay = 60, provider = "ASAAS", configPath = "./") {
         _EasyPix_instances.add(this);
         _EasyPix_API_KEY.set(this, void 0);
         _EasyPix_configPath.set(this, void 0);
@@ -47,7 +43,12 @@ class EasyPix {
         __classPrivateFieldSet(this, _EasyPix_provider, provider, "f");
         __classPrivateFieldSet(this, _EasyPix_API_KEY, apiKey, "f");
         switch (provider) {
-            default:
+            case "MERCADOPAGO":
+                if (!apiKey)
+                    throw new Error("Missing Mercado Pago api key. Take a look on https://www.mercadopago.com.br/developers/pt/docs and get yours.");
+                __classPrivateFieldSet(this, _EasyPix_ApiInterface, new mercado_pago_1.default(__classPrivateFieldGet(this, _EasyPix_API_KEY, "f"), useSandbox), "f");
+                break;
+            case "ASAAS":
                 if (!apiKey)
                     throw new Error("Missing Asaas api key. Take a look on https://docs.asaas.com/docs/autenticacao and get yours.");
                 __classPrivateFieldSet(this, _EasyPix_ApiInterface, new asaas_1.default(__classPrivateFieldGet(this, _EasyPix_API_KEY, "f"), useSandbox), "f");
@@ -105,17 +106,17 @@ class EasyPix {
      * Create a new payment.
      * @param id - Payment ID.
      * @param clientName - Client name.
-     * @param cpfCnpj - Client CPF/CNPJ.
+     * @param cpfCnpjEmail - Identifier of the client.
      * @param value - Payment value.
      * @param description - Payment description.
      * @param expiresIn - Payment expiration time (in seconds).
      * @param metadata - Payment metadata.
      * @returns Payment details.
      */
-    create(id, clientName, cpfCnpj, value, description, expiresIn = 5 * 60, metadata = {}) {
+    create(id, clientName, cpfCnpjEmail, value, description, expiresIn = 5 * 60, metadata = {}) {
         return __awaiter(this, void 0, void 0, function* () {
             const pix = yield __classPrivateFieldGet(this, _EasyPix_ApiInterface, "f").generatePix({
-                cpfCnpj: cpfCnpj,
+                cpfCnpj: cpfCnpjEmail,
                 description: description,
                 id: id,
                 name: clientName,
