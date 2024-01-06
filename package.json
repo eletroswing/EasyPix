@@ -1,7 +1,7 @@
 {
   "name": "easy-pix",
   "version": "1.0.1",
-  "description": "Pix payments made easy for developers build arround payment gatways",
+  "description": "Pix payments made easy for developers build arround payment gateways",
   "main": "./dist/index.js",
   "scripts": {
     "build": "tsc",
@@ -30,6 +30,7 @@
   },
   "homepage": "https://github.com/eletroswing/EasyPix#readme",
   "devDependencies": {
+    "@types/jest": "^29.5.11",
     "@types/node-schedule": "^2.1.5",
     "commitizen": "^4.3.0",
     "jest": "^29.7.0",
@@ -39,6 +40,7 @@
   },
   "dependencies": {
     "axios": "^1.6.4",
+    "http-status-codes": "^2.3.0",
     "node-schedule": "^2.1.1"
   },
   "presets": [
