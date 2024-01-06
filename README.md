@@ -1,30 +1,42 @@
 # Easy Pix
+
 EasyPix foi construido para ser um ecossistema pix completo de uso simples em nodejs, desde a geração do pix, até as chamadas de callback!
 
 # gateways de pagamento
+
 Atualmente só suportamos o gateway Asaas, porém a planos para expandir para outros provedores como Mercado Pago, OpenPix, etc!
 
 # Ainda em testes
+
 Considere em colaborar para tornar essa lib algo melhor pra comunidade! Tenha em mente que ainda está em fase inicial e pode falhar.
 
+# STATUS DOS GATEWAYS
+- **Mercado Pago** - implementado
+- **Asaas** - implementado
+
 # Como usar
+
 - Primeiro instale a lib:
+
 ```bash
 npm install easy-pix
 ```
 
 - Importe a lib
+
 ```js
 import EasyPix from "easy-pix";
 ```
 
 - Iniciar a lib
-Note, easy-pix é uma classe que precisa ser iniciada antes de ser usada.
+  Note, easy-pix é uma classe que precisa ser iniciada antes de ser usada.
+
 ```js
 const EasyPixLib = new EasyPix(Chave);
 ```
 
 # Docs
+
 <details>
   <summary>Exibir docs</summary>
   
@@ -32,15 +44,18 @@ const EasyPixLib = new EasyPix(Chave);
 O construtor EasyPix recebe parametros obrigatorios e opcionais, sendo eles:
 
 **Obrigatorios**:
+
 - **apiKey**: A chave de api, por padrão, a sua chave asaas sandbox.
 
 **Opcionais**:<br />
+
 - **useSandbox**: Define se é a api em modo de testes ou não, por padrão vem definido como true, lembre-se, a chave de api deve acompanhar esse argumento, se sua chave for sandbox, isso deve ser definido como true, se não, como false
 - **loopSecondsDelay**: Define o tempo do loop que irá checar se os pagamentos foram efetuados ou não. Por padrão vem definido como 60 segundos.
 - **provider**: O provedor do gateway. Atualmente so asaas é suportado.
 - **configPath**: Caminho do json de configuração. É onde será salvo os pagamentos pendentes para caso o script venha a cair, os dados ainda estejam salvos.
 
 # EasyPix: Metódos:
+
 A classe easypix após iniciada exporta alguns metódos para acesso. Confira-os:
 
 <details>
@@ -71,7 +86,7 @@ Sua função mais parceira. Ela cria codigos pix expiraveis pra você.
 - **cpfCnpj** (string): Documento identificador do cliente (sem pontuação).
 - **value** (number): Valor a ser cobrado na transação PIX.
 - **description** (string): Descrição da transação PIX.
-- **expiresIn** (number): Tempo de expiração da transação em segundos 
+- **expiresIn** (number): Tempo de expiração da transação em segundos
   - Padrão: 5 minutos
   - Mínimo: 1 minuto
   - Máximo: 48 horas
@@ -87,20 +102,16 @@ Sua função mais parceira. Ela cria codigos pix expiraveis pra você.
   - **value** (number): O valor total cobrado na transação PIX.
   - **netValue** (number): O valor líquido após descontos do provedor de gateway.
 
-
 ### Exemplo de Uso:
 
 ```javascript
-const pix = await EasyPixLib.create(
-  id: "Seu identificador único",
-  clientName: "Nome do seu cliente",
-  cpfCnpj: "Documento identificador do seu cliente (sem pontuação)",
-  value: Valor a ser cobrado,
-  description: "Descrição do pix",
-  expiresIn: Valor em segundos para expiração (padrão: 5 minutos, mínimo: 1 minuto, máximo: 48 horas),
-  metadata: são os dados que você quer salvar nesse pagamento e receber depois
-);
-
+const pix = await EasyPixLib.create({
+  id: "123", //seu identificador interno do cliente
+  name: "John Doe", // nome do cliente
+  taxId: "123456789", //o identificador, note que isso varia para os gatways, no asaas é o cpf, no mercado pago email
+  value: 100, //valor
+  description: "Test Pix", //descrição
+});
 ```
 
 </details>
@@ -123,10 +134,7 @@ Essa função deleta uma cobrança.
 ### Exemplo de Uso:
 
 ```javascript
-await EasyPixLib.deleteCob(
-  id: "Seu identificador único"
-);
-
+await EasyPixLib.deleteCob("Seu identificador único");
 ```
 
 </details>
@@ -136,7 +144,8 @@ await EasyPixLib.deleteCob(
   
 ## EasyPixLib.transfer
 
-Essa função faz uma transferencia bancária via pix
+Essa função faz uma transferencia bancária via pix.
+Atenção: Alguns gateways podem não ter isso implementado, o que lancará um erro.
 
 ### Parâmetros:
 
@@ -158,12 +167,11 @@ Essa função faz uma transferencia bancária via pix
 
 ```javascript
 const pix = await EasyPixLib.transfer(
-  value: o valor,
-  pixAddressKey: a chave,
-  pixAddressKeyType: o tipo da chave,
-  description: a descrição.
+  100, //valor
+  "john@example.com", //chave
+  "EMAIL", //tipoo da chave
+  "Transfer description" //description
 );
-
 ```
 
 </details>
@@ -172,14 +180,18 @@ const pix = await EasyPixLib.transfer(
   <summary>EasyPixLib.pendingPayments</summary>
 
 ### pendingPayments
+
 É o objeto de pagamentos pendentes. Pode ser acessado com:
+
 ```js
 EasyPixLib.pendingPayments;
 ```
+
 </details>
 </details>
 
 # PixMe a coffee ☕
+
 ![PixMe a Coffee](https://pixmeacoffee.vercel.app/_next/image?url=https%3A%2F%2Fapi.qrserver.com%2Fv1%2Fcreate-qr-code%2F%3Fsize%3D206x206%26data%3D00020126360014BR.GOV.BCB.PIX0114%2B55329848279105204000053039865802BR5922Ytalo%20da%20Silva%20Batalha6003Uba62070503***63049B02&w=256&q=75 "PixMe a coffee")
 
 # Esse projeto está sob a licença MIT.
