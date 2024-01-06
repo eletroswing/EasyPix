@@ -44,7 +44,8 @@ class EasyPix {
         __classPrivateFieldSet(this, _EasyPix_provider, provider, "f");
         __classPrivateFieldSet(this, _EasyPix_API_KEY, apiKey || '', "f");
         const providers = {
-            [interfaces_1.PROVIDERS.ASAAS]: providers_1.AsaasProvider
+            [interfaces_1.PROVIDERS.ASAAS]: providers_1.AsaasProvider,
+            [interfaces_1.PROVIDERS.MERCADOPAGO]: providers_1.MercadopagoProvider
         };
         if (!providers[provider]) {
             throw new errors_1.InvalidProvider(provider);
