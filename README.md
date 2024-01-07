@@ -2,7 +2,7 @@
 EasyPix foi construido para ser um ecossistema pix completo de uso simples em nodejs, desde a geração do pix, até as chamadas de callback!
 
 # Gatways de pagamento
-Atualmente só suportamos o gatway Asaas, porém a planos para expandir para outros provedores como Mercado Pago, OpenPix, etc!
+Atualmente suportamos o gateway Asaas e Mercado Pago, porém a planos para expandir para outros provedores como OpenPix, etc!
 
 # Ainda em testes
 Considere em colaborar para tornar essa lib algo melhor pra comunidade! Tenha em mente que ainda está em fase inicial e pode falhar.
@@ -37,7 +37,7 @@ O construtor EasyPix recebe parametros obrigatorios e opcionais, sendo eles:
 **Opcionais**:<br />
 - **useSandbox**: Define se é a api em modo de testes ou não, por padrão vem definido como true, lembre-se, a chave de api deve acompanhar esse argumento, se sua chave for sandbox, isso deve ser definido como true, se não, como false
 - **loopSecondsDelay**: Define o tempo do loop que irá checar se os pagamentos foram efetuados ou não. Por padrão vem definido como 60 segundos.
-- **provider**: O provedor do gatway. Atualmente so asaas é suportado.
+- **provider**: O provedor do gatway. Pode ser "ASAAS" e "MERCADOPAGO".
 - **configPath**: Caminho do json de configuração. É onde será salvo os pagamentos pendentes para caso o script venha a cair, os dados ainda estejam salvos.
 
 # EasyPix: Metódos:
@@ -68,7 +68,7 @@ Sua função mais parceira. Ela cria codigos pix expiraveis pra você.
 
 - **id** (string): Identificador único para a transação PIX.
 - **clientName** (string): Nome do cliente associado à transação.
-- **cpfCnpj** (string): Documento identificador do cliente (sem pontuação).
+- **cpfCnpjEmail** (string): Documento identificador do cliente (sem pontuação).
 - **value** (number): Valor a ser cobrado na transação PIX.
 - **description** (string): Descrição da transação PIX.
 - **expiresIn** (number): Tempo de expiração da transação em segundos 
@@ -94,7 +94,7 @@ Sua função mais parceira. Ela cria codigos pix expiraveis pra você.
 const pix = await EasyPixLib.create(
   id: "Seu identificador único",
   clientName: "Nome do seu cliente",
-  cpfCnpj: "Documento identificador do seu cliente (sem pontuação)",
+  cpfCnpjEmail: "Documento identificador do seu cliente",
   value: Valor a ser cobrado,
   description: "Descrição do pix",
   expiresIn: Valor em segundos para expiração (padrão: 5 minutos, mínimo: 1 minuto, máximo: 48 horas),

@@ -1,8 +1,12 @@
 {
   "name": "easy-pix",
-  "version": "1.0.1",
   "description": "Pix payments made easy for developers build arround payment gateways",
+  "version": "1.1.0",
   "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "jest",
