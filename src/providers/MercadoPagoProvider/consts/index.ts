@@ -1,0 +1,1 @@
+export const MERCADO_PAGO_BASE_URL = "https://api.mercadopago.com/v1";
