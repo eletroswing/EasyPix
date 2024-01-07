@@ -2,7 +2,7 @@ import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, CreateAxiosDefaul
 import { StatusCodes, getReasonPhrase } from 'http-status-codes';
 
 import { HttpClientError } from './errors';
-import { IHttpClient, IHttpRequestResponse } from './interfaces';
+import { IHttpClient, IHttpClientResponse } from './interfaces';
 
 export class AxiosHttpClient implements IHttpClient {
     private readonly fetcher: AxiosInstance;
@@ -37,7 +37,7 @@ export class AxiosHttpClient implements IHttpClient {
         url: string,
         data: D,
         config?: AxiosRequestConfig
-    ): Promise<IHttpRequestResponse<T>> {
+    ): Promise<IHttpClientResponse<T>> {
         try {
             const result = await this.fetcher.put<T>(url, data, config);
             return { statusCode: result.status, body: result.data };
@@ -51,7 +51,7 @@ export class AxiosHttpClient implements IHttpClient {
         url: string,
         data: D,
         config?: AxiosRequestConfig
-    ): Promise<IHttpRequestResponse<T>> {
+    ): Promise<IHttpClientResponse<T>> {
         try {
             const result = await this.fetcher.patch<T>(url, data, config);
             return { statusCode: result.status, body: result.data };
@@ -64,7 +64,7 @@ export class AxiosHttpClient implements IHttpClient {
     async delete<T>(
         url: string,
         config?: AxiosRequestConfig
-    ): Promise<IHttpRequestResponse<T>> {
+    ): Promise<IHttpClientResponse<T>> {
         try {
             const result = await this.fetcher.delete<T>(url, config);
             return { statusCode: result.status, body: result.data };
@@ -77,7 +77,7 @@ export class AxiosHttpClient implements IHttpClient {
     async get<T>(
         url: string,
         config?: AxiosRequestConfig
-    ): Promise<IHttpRequestResponse<T>> {
+    ): Promise<IHttpClientResponse<T>> {
         try {
             const result = await this.fetcher.get<T>(url, config);
             return { statusCode: result.status, body: result.data };
@@ -91,7 +91,7 @@ export class AxiosHttpClient implements IHttpClient {
         url: string,
         data: D,
         config?: AxiosRequestConfig
-    ): Promise<IHttpRequestResponse<T>> {
+    ): Promise<IHttpClientResponse<T>> {
         try {
             const result = await this.fetcher.post<T>(url, data, config);
             return { statusCode: result.status, body: result.data };

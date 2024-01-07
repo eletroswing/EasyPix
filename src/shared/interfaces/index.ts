@@ -68,6 +68,7 @@ export interface IPendingPayment {
 
 export enum PROVIDERS {
     ASAAS = "ASAAS",
+    MERCADO_PAGO = 'MERCADO_PAGO'
 }
 
 export interface IProvider {

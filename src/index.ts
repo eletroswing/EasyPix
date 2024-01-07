@@ -6,7 +6,7 @@ import { ICreatePixPayload, ICreatePixTransferPayload, ICreatePixTransferResult,
 import { AsaasProvider, MercadoPagoProvider } from "./providers";
 import { InvalidProvider } from "./shared/errors";
 
-export default class EasyPix {
+export class EasyPix {
   #API_KEY: string;
   #configPath: string;
   #mainLoop: NodeJS.Timeout | undefined;
