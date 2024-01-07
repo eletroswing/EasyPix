@@ -8,11 +8,12 @@ import { HttpClientError } from "../../clients/HttpClient/errors";
 import { IHttpClient } from "../../clients/HttpClient/interfaces";
 import { AsaasProviderError } from "./errors/AsaasProviderError";
 import { MissingApiKey } from "../../shared/errors";
+import { getFormattedDateNow } from "../../shared/getFormattedDateNow";
 
 export class AsaasProvider implements IProvider {
-    private readonly ASAAS_BASE_URL: string;
+    private readonly BASE_URL: string;
 
-    private readonly ASAAS_KEY: string;
+    private readonly API_KEY: string;
 
     private readonly httpClient: IHttpClient;
 
@@ -21,27 +22,19 @@ export class AsaasProvider implements IProvider {
             throw new MissingApiKey();
         }
 
-        this.ASAAS_KEY = API_KEY;
-        this.ASAAS_BASE_URL = useSandbox ? ASAAS_SAND_BOX_BASE_URL : ASAAS_BASE_URL;
+        this.API_KEY = API_KEY;
+        this.BASE_URL = useSandbox ? ASAAS_SAND_BOX_BASE_URL : ASAAS_BASE_URL;
         this.httpClient = httpClient;
-    }
-
-    private getFormatedDateNow(): string {
-        const gmt3 = new Date();
-        const year = gmt3.getFullYear() + 1;
-        const month = String(gmt3.getMonth() + 1).padStart(2, "0");
-        const day = String(gmt3.getDate()).padStart(2, "0");
-        return `${year}-${month}-${day}`;
     }
 
     private async createCustomer({ name, cpfCnpj }: ICreateCustomerPayload): Promise<ICreateCustomerResponse> {
         try {
             const { body } = await this.httpClient.post<ICreateCustomerPayload, ICreateCustomerResponse>(
-                `${this.ASAAS_BASE_URL}/customers`,
+                `${this.BASE_URL}/customers`,
                 { name, cpfCnpj },
                 {
                     headers: {
-                        access_token: this.ASAAS_KEY,
+                        access_token: this.API_KEY,
                     },
                 }
             );
@@ -72,7 +65,7 @@ export class AsaasProvider implements IProvider {
     }: ICreatePixPaymentPayload): Promise<ICreatePixPaymentResponse> {
         try {
             const { body } = await this.httpClient.post<ICreatePixPaymentPayload, ICreatePixPaymentResponse>(
-                `${this.ASAAS_BASE_URL}/payments`,
+                `${this.BASE_URL}/payments`,
                 {
                     value,
                     dueDate,
@@ -84,7 +77,7 @@ export class AsaasProvider implements IProvider {
                 },
                 {
                     headers: {
-                        access_token: this.ASAAS_KEY,
+                        access_token: this.API_KEY,
                     },
                 }
             );
@@ -108,10 +101,10 @@ export class AsaasProvider implements IProvider {
     private async getPixPaymentQrCodeByPaymentId(paymentId: string): Promise<IGetQrCodeByPaymentIdResponse> {
         try {
             const { body } = await this.httpClient.get<IGetQrCodeByPaymentIdResponse>(
-                `${this.ASAAS_BASE_URL}/payments/${paymentId}/pixQrCode`,
+                `${this.BASE_URL}/payments/${paymentId}/pixQrCode`,
                 {
                     headers: {
-                        access_token: this.ASAAS_KEY,
+                        access_token: this.API_KEY,
                     },
                 }
             );
@@ -133,15 +126,15 @@ export class AsaasProvider implements IProvider {
 
     public async createPixPayment({ id, name, taxId, value, description }: ICreatePixPayload): Promise<ICreatePixResult> {
         const createdCustomer = await this.createCustomer({ name, cpfCnpj: taxId });
-        const dueDate = this.getFormatedDateNow();
+        const dueDate = getFormattedDateNow();
         const pixPayment = await this.createPayment({
             value,
             dueDate,
             description,
-            billingType: BILLING_TYPE.PIX,
             postalService: false,
             externalReference: id,
             customer: createdCustomer.id,
+            billingType: BILLING_TYPE.PIX,
         })
 
         const qrCode = await this.getPixPaymentQrCodeByPaymentId(pixPayment.id);
@@ -158,10 +151,10 @@ export class AsaasProvider implements IProvider {
     public async getPixPaymentStatusByPaymentId(paymentId: string): Promise<PIX_STATUS> {
         try {
             const { body: { status: paymentStatus } } = await this.httpClient.get<IGetPaymentStatusByPaymentIdResponse>(
-                `${this.ASAAS_BASE_URL}/payments/${paymentId}/status`,
+                `${this.BASE_URL}/payments/${paymentId}/status`,
                 {
                     headers: {
-                        access_token: this.ASAAS_KEY,
+                        access_token: this.API_KEY,
                     },
                 }
             );
@@ -190,10 +183,10 @@ export class AsaasProvider implements IProvider {
     public async deletePixChargeByPaymentId(paymentId: string): Promise<boolean> {
         try {
             const { body: { deleted: wasDeletedSuccessfuly } } = await this.httpClient.delete<IDeletePixChargeByPaymentIdResponse>(
-                `${this.ASAAS_BASE_URL}/payments/${paymentId}`,
+                `${this.BASE_URL}/payments/${paymentId}`,
                 {
                     headers: {
-                        access_token: this.ASAAS_KEY,
+                        access_token: this.API_KEY,
                     },
                 }
             );
@@ -222,7 +215,7 @@ export class AsaasProvider implements IProvider {
     }: ICreatePixTransferPayload): Promise<ICreatePixTransferResult> {
         try {
             const { body } = await this.httpClient.post<ICreatePixTransferPayload, ICreatePixTransferResponse>(
-                `${this.ASAAS_BASE_URL}/transfers`,
+                `${this.BASE_URL}/transfers`,
                 {
                     value,
                     description,
@@ -232,7 +225,7 @@ export class AsaasProvider implements IProvider {
                 },
                 {
                     headers: {
-                        access_token: this.ASAAS_KEY,
+                        access_token: this.API_KEY,
                     },
                 }
             );

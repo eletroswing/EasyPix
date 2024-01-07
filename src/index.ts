@@ -6,7 +6,7 @@ import { ICreatePixPayload, ICreatePixTransferPayload, ICreatePixTransferResult,
 import { AsaasProvider } from "./providers";
 import { InvalidProvider } from "./shared/errors";
 
-export default class EasyPix {
+export class EasyPix {
   #API_KEY: string;
   #configPath: string;
   #mainLoop: NodeJS.Timeout | undefined;
@@ -37,7 +37,7 @@ export default class EasyPix {
     this.#provider = provider;
     this.#API_KEY = apiKey || '';
     const providers = {
-      [PROVIDERS.ASAAS]: AsaasProvider
+      [PROVIDERS.ASAAS]: AsaasProvider,
     }
 
     if (!providers[provider]) {
