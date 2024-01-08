@@ -104,6 +104,7 @@ export interface ICreatePixPaymentPayload {
     description: string;
     payer: {
         email: string;
+        first_name: string;
     },
     external_reference: string;
     payment_method_id: "Pix" | "Account_money" | "Debin_transfer" | 'Ted' | 'Cvu';
