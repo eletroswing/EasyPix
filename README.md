@@ -11,7 +11,7 @@ Atualmente suportamos:
 Considere em colaborar para tornar essa lib algo melhor pra comunidade! Tenha em mente que ainda está em fase inicial e pode falhar.
 
 # Documentação
-Encontre a docs e como usar aqui: [Link para a documentação](dOCS.md)
+Encontre a docs e como usar aqui: [Link para a documentação](DOCS.md)
 
 # Contribua
 Encontre como você pode contribuir para o projeto a partir da sua máquina: [Link para o CONTRIBUTING.md](CONTRIBUTING.md)

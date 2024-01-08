@@ -7,13 +7,13 @@ npm install easy-pix
 
 - Importe a lib
 ```js
-import EasyPix from "easy-pix";
+import {EasyPix} from "easy-pix";
 ```
 
 - Iniciar a lib<br >
 > Note, easy-pix é uma classe que precisa ser iniciada antes de ser usada.
 ```js
-const EasyPixLib = new EasyPix({config});
+const EasyPix = new EasyPix({config});
 ```
 
 # Docs
@@ -36,23 +36,23 @@ O construtor EasyPix recebe parametros obrigatorios e opcionais, sendo eles:
 A classe easypix após iniciada exporta alguns metódos para acesso. Confira-os:
 
 <details>
-  <summary>EasyPixLib.onDue e EasyPixLib.onPaid</summary>
+  <summary>EasyPix.onDue e EasyPix.onPaid</summary>
   
 ### onDue e onPaid
 São os callbacks de quando um pix é pagou ou expirado. Recebe uma função de argumentos (id: seu id passado para o pagamento, metadata: seus_metadados), sendo aplicado como:
 ```js
-EasyPixLib.onDue((id: string, metadata: any): void => {});
+EasyPix.onDue((id: string, metadata: any): void => {});
 ```
 Ou:
 ```js
-EasyPixLib.onPaid((id: string, metadata: any): void => {});
+EasyPix.onPaid((id: string, metadata: any): void => {});
 ```
 </details>
 
 <details>
-  <summary>EasyPixLib.create</summary>
+  <summary>EasyPix.create</summary>
   
-## EasyPixLib.create
+## EasyPix.create
 
 Sua função mais parceira. Ela cria codigos pix expiraveis pra você.
 
@@ -83,7 +83,7 @@ Sua função mais parceira. Ela cria codigos pix expiraveis pra você.
 ### Exemplo de Uso:
 
 ```javascript
-const pix = await EasyPixLib.create(
+const pix = await EasyPix.create(
   {
     id: "Seu identificador único",
     clientName: "Nome do seu cliente",
@@ -100,9 +100,9 @@ const pix = await EasyPixLib.create(
 </details>
 
 <details>
-  <summary>EasyPixLib.deleteCob</summary>
+  <summary>EasyPix.deleteCob</summary>
   
-## EasyPixLib.deleteCob
+## EasyPix.deleteCob
 
 Essa função deleta uma cobrança.
 
@@ -117,15 +117,15 @@ Essa função deleta uma cobrança.
 ### Exemplo de Uso:
 
 ```javascript
-await EasyPixLib.deleteCob("Seu identificador único");
+await EasyPix.deleteCob("Seu identificador único");
 ```
 
 </details>
 
 <details>
-  <summary>EasyPixLib.transfer</summary>
+  <summary>EasyPix.transfer</summary>
   
-## EasyPixLib.transfer
+## EasyPix.transfer
 
 Essa função faz uma transferencia bancária via pix
 
@@ -148,7 +148,7 @@ Essa função faz uma transferencia bancária via pix
 ### Exemplo de Uso:
 
 ```javascript
-const pix = await EasyPixLib.transfer({
+const pix = await EasyPix.transfer({
     value: o valor,
     pixAddressKey: a chave,
     pixAddressKeyType: o tipo da chave,
@@ -160,9 +160,9 @@ const pix = await EasyPixLib.transfer({
 </details>
 
 <details>
-  <summary>EasyPixLib.quit</summary>
+  <summary>EasyPix.quit</summary>
   
-## EasyPixLib.quit
+## EasyPix.quit
 
 Essa função encerra o main loop da biblioteca. Ideal para fechar o programa.
 
@@ -175,18 +175,18 @@ Nenhum
 ### Exemplo de Uso:
 
 ```javascript
-await EasyPixLib.quit()
+await EasyPix.quit()
 ```
 
 </details>
 
 <details>
-  <summary>EasyPixLib.pendingPayments</summary>
+  <summary>EasyPix.pendingPayments</summary>
 
 ### pendingPayments
 É o objeto de pagamentos pendentes. Pode ser acessado com:
 ```js
-EasyPixLib.pendingPayments;
+EasyPix.pendingPayments;
 ```
 </details>
 </details>

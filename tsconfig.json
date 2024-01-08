@@ -8,7 +8,7 @@
     "skipLibCheck": true, /* Skip type checking all .d.ts files. */
     "esModuleInterop": true, /* Emit additional JavaScript to ease support for importing CommonJS modules. This enables 'allowSyntheticDefaultImports' for type compatibility. */
     "resolveJsonModule": true,
-    "emitDeclarationOnly": true,
+    "emitDeclarationOnly": false,
     "useDefineForClassFields": true,
     "forceConsistentCasingInFileNames": true, /* Ensure that casing is correct in imports. */
   },
