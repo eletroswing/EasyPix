@@ -1,13 +1,27 @@
 {
   "compilerOptions": {
-    "target": "es2016",                                  /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
-    "module": "commonjs",                                /* Specify what module code is generated. */
-    "esModuleInterop": true,                             /* Emit additional JavaScript to ease support for importing CommonJS modules. This enables 'allowSyntheticDefaultImports' for type compatibility. */
-    "forceConsistentCasingInFileNames": true,            /* Ensure that casing is correct in imports. */
-    "strict": true,                                      /* Enable all strict type-checking options. */
-    "skipLibCheck": true,                                 /* Skip type checking all .d.ts files. */
+    "strict": true, /* Enable all strict type-checking options. */
+    "target": "ES2020", /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
     "outDir": "./dist",
+    "module": "commonjs", /* Specify what module code is generated. */
+    "declaration": true,
+    "skipLibCheck": true, /* Skip type checking all .d.ts files. */
+    "esModuleInterop": true, /* Emit additional JavaScript to ease support for importing CommonJS modules. This enables 'allowSyntheticDefaultImports' for type compatibility. */
+    "resolveJsonModule": true,
+    "emitDeclarationOnly": true,
+    "useDefineForClassFields": true,
+    "forceConsistentCasingInFileNames": true, /* Ensure that casing is correct in imports. */
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules"]
+  "paths": {
+    "easy-pix": [
+      "./index.ts"
+    ]
+  },
+  "include": [
+    "src",
+    "index.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }
