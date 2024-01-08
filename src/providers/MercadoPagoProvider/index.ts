@@ -27,7 +27,7 @@ export class MercadoPagoProvider implements IProvider {
         this.httpClient = httpClient;
     }
 
-    public async createPixPayment({ id, name: _name, taxId, value, description }: ICreatePixPayload): Promise<ICreatePixResult> {
+    public async createPixPayment({ id, name, taxId, value, description }: ICreatePixPayload): Promise<ICreatePixResult> {
         try {
             const { body: payment } = await this.httpClient.post<ICreatePixPaymentPayload, ICreatePixPaymentResponse>(
                 `${this.BASE_URL}/payments`,
@@ -35,6 +35,7 @@ export class MercadoPagoProvider implements IProvider {
                     description,
                     payer: {
                         email: taxId,
+                        first_name: name.split(" ")[0] || " ",
                     },
                     external_reference: id,
                     payment_method_id: "Pix",
