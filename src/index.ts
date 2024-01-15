@@ -3,7 +3,7 @@ import fs from "node:fs";
 import nodeSchedule from "node-schedule";
 
 import { ICreatePixPayload, ICreatePixTransferPayload, ICreatePixTransferResult, IPendingPayment, IProvider, OPERATION_TYPE, PIX_ADDRESS_KEY_TYPE, PIX_STATUS, PROVIDERS } from "./shared/interfaces";
-import { AsaasProvider, MercadoPagoProvider } from "./providers";
+import { providers } from "./providers";
 import { InvalidProvider } from "./shared/errors";
 
 export class EasyPix {
@@ -36,10 +36,6 @@ export class EasyPix {
 
     this.#provider = provider;
     this.#API_KEY = apiKey || '';
-    const providers = {
-      [PROVIDERS.ASAAS]: AsaasProvider,
-      [PROVIDERS.MERCADO_PAGO]: MercadoPagoProvider
-    }
 
     if (!providers[provider]) {
       throw new InvalidProvider(provider)
