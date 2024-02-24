@@ -41,6 +41,6 @@ npm run build
 Uma build será gerada no diretório dist pra você!
 
 # PixMe a coffee ☕
-![PixMe a Coffee](https://pixmeacoffee.vercel.app/_next/image?url=https%3A%2F%2Fapi.qrserver.com%2Fv1%2Fcreate-qr-code%2F%3Fsize%3D206x206%26data%3D00020126360014BR.GOV.BCB.PIX0114%2B55329848279105204000053039865802BR5922Ytalo%20da%20Silva%20Batalha6003Uba62070503***63049B02&w=256&q=75 "PixMe a coffee")
++32 984827910
 
 # Esse projeto está sob a licença MIT.
